@@ -1,2 +1,4 @@
+image: maven:3.2.5-jdk6
+
 build:
   script: "mvn install"
