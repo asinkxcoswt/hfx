@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+	xmlns:layout="http://www.thymeleaf.org" layout:decorator="common/base">
+
+<head>
+<title>Index</title>
+</head>
+
+<body>
+	<th:block layout:fragment="content">
+		<div class="container">
+			<div class="row">
+				<div class="col-lg-12 text-center">
+					<h1>HFX - Hotfix Tracking Tools</h1>
+					<p class="lead">If thou gaze long into an abyss, the abyss will
+						also gaze into thee.</p>
+					<ul class="list-unstyled">
+						<li>Written in <a target="_blank"
+							href="https://projects.spring.io/spring-boot/">Spring-Boot</a> ,
+							you can clone the source code from <a target="_blank"
+							href="http://172.19.129.61/">git.true.th</a> and customize it as
+							you like (<a target="_blank" href="#">How to?</a>)
+						</li>
+					</ul>
+				</div>
+			</div>
+			<!-- /.row -->
+			<div class="row">
+				<div class="col-lg-12">
+					<div class="panel panel-info">
+						<div class="panel-heading">
+							<form id="formAddDoc" class="form-inline" method="GET">
+								<div class="form-group">
+									<button type="submit" class="btn btn-success"><span class="glyphicon glyphicon-plus"></span></button> 
+									<input id="formAddDoc-input-version" type="number" min="700" max="799" class="form-control" placeholder="Version" required="required" />
+									<input id="formAddDoc-input-documentID" type="text" class="form-control" placeholder="Tracking Document Name" required="required" />
+								</div>
+							</form>
+						</div>
+						<div class="panel-body">
+							<ul class="list-group" th:each="docList : ${allTrackingDoc}">
+								<li class="list-group-item disabled" th:text="'All Hotfix Tracking Documents V' + ${docList.key}">All Hotfix Tracking Documents</li>
+								<li class="list-group-item" th:each="docID : ${docList.value}">
+									<a th:href="@{'/hotfix/tracking-doc/' + ${docList.key} + '/' + ${docID}}"
+									th:text="${docID + ' (V' + docList.key + ')'}">tracking_doc</a>
+								</li>
+							</ul>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</th:block>
+	<th:block layout:fragment="additional-js">
+		<script>
+			$("#formAddDoc").submit(function(event) {
+				console.log(event);
+				var version = $("#formAddDoc-input-version").val()
+				var documentID = $("#formAddDoc-input-documentID").val()
+				$(this).attr("action", "/hotfix/tracking-doc/"+version+"/"+documentID)
+			})
+		</script>
+	</th:block>
+</body>
+
+</html>

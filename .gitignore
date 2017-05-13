@@ -1,0 +1,7 @@
+/bin/
+/target/
+node_modules
+node
+build
+.project
+.classpath

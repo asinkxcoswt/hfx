@@ -1,0 +1,39 @@
+{
+	"name": "hfx-fe",
+	"version": "0.0.1",
+	"dependencies": {
+		"jquery": "^2.1.4",
+		"bootstrap": "^3.3.5",
+		"webpack": "^1.12.2",
+		"react": "^15.3.2",
+		"immutability-helper": "",
+		"react-dom": "^15.3.2",
+		"react-data-grid": "",
+		"dateformat": "^2.0.0",
+		"react-data-grid-addons": "",
+		"react-bootstrap": "",
+		"react-dates": "",
+		"moment": "",
+		"react-addons-shallow-compare": "",
+		"react-tinymce": "",
+		"reselect": "",
+		"react-loading-overlay": "0.2.4",
+		"react-svg-piechart": ""
+	},
+	"devDependencies": {
+		"babel-core": "^6.18.2",
+		"babel-loader": "^6.2.7",
+		"babel-polyfill": "^6.16.0",
+		"babel-preset-es2015": "^6.18.0",
+		"babel-preset-react": "^6.16.0",
+		"babel-preset-stage-0": "",
+		"babel-runtime": "",
+		"babel-plugin-transform-runtime": "",
+		"grunt": "",
+		"grunt-cli": "",
+		"grunt-contrib-jshint": ""
+	},
+	"scripts": {
+		"watch": "webpack --watch -d"
+	}
+}

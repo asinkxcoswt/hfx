@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+	xmlns:layout="http://www.thymeleaf.org" layout:decorator="common/base">
+<head>
+<title>HFX Mail Client</title>
+<script th:src="@{/lib/tinymce_4.5.6_dev/tinymce/js/tinymce/tinymce.js}"></script>
+<script th:inline="javascript">
+/*<![CDATA[*/
+    var pageProperties = {
+    	mailInfo: /*[[${mailInfo}]]*/,
+    }
+    /*]]>*/
+</script>
+</head>
+<body>
+	<th:block layout:fragment="content">
+		<div id="react-mail-client"></div>
+	</th:block>
+	<th:block layout:fragment="js">
+		<script th:src="@{/webjars/hfx-fe/mail/mail.js}"></script>
+	</th:block>
+</body>
+</html>

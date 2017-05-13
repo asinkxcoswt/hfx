@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+	xmlns:layout="http://www.thymeleaf.org" layout:decorator="common/base">
+<head>
+<title>Hotfix Tracking</title>
+<link rel="stylesheet" type="text/css" th:href="@{/css/hotfix-tracking.css}"></link>
+<link rel="stylesheet" type="text/css" th:href="@{/webjars/react-dates/lib/css/_datepicker.css}"></link>
+<script th:src="@{/lib/tinymce_4.5.6_dev/tinymce/js/tinymce/tinymce.js}"></script>
+<script th:inline="javascript">
+/*<![CDATA[*/
+    var pageProperties = {
+    	version: /*[[${version}]]*/,
+    	documentID: /*[[${documentID}]]*/
+    }
+    /*]]>*/
+</script>
+</head>
+<body>
+	<th:block layout:fragment="content">
+		<div id="react" class="text-center"></div>
+	</th:block>
+	<th:block layout:fragment="js">
+		<script th:src="@{/webjars/hfx-fe/hotfix/hotfix-tracking.js}"></script>
+	</th:block>
+</body>
+</html>

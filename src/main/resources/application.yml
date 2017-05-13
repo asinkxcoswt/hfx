@@ -1,0 +1,25 @@
+spring.profiles.active: dev
+# java -Dspring.profiles.active=prod -jar ./hfx-0.0.1-SNAPSHOT.jar 
+---
+server:
+  port: 8001
+  
+endpoints:
+  shutdown:
+    sensitive: false
+    enabled: true
+    
+spring.http.multipart.max-file-size: 2MB
+spring.http.multipart.max-request-size: 2MB
+---
+spring.profiles: prod
+hfx:
+  hotfix-location: /truuser12/inftools/aimsys/toolsamc/hotfix/HOTFIX/ABP/Release_
+  tracking-doc-location: /truuser1/uat/aimsys/truwrk1/hfx/tracking_doc
+  resource-location: /truuser1/uat/aimsys/truwrk1/hfx/res
+---
+spring.profiles: dev
+hfx:
+  hotfix-location: ${java.io.tmpdir}/hotfix_repo_
+  tracking-doc-location: ${java.io.tmpdir}/tracking_doc_repo_
+  resource-location: ${java.io.tmpdir}/res
