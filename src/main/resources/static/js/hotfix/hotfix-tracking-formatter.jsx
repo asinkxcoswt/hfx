@@ -179,8 +179,8 @@ export class ConfirmHotfixFormatter extends React.Component {
             id: file.name,
             file: file
         }
-        
-        console.log(this.testResultInput.files)
+
+        console.log( this.testResultInput.files )
 
         this.setState( { showForm: false }, () => {
             this.props.onSubmitForm(
@@ -194,10 +194,19 @@ export class ConfirmHotfixFormatter extends React.Component {
         })
     }
 
+    refresh = () => {
+        this.setState({})
+    }
+
     render() {
         if ( !this.props.isEnabled( this.props.dependentValues ) ) {
             return <span className="glyphicon glyphicon-ban-circle" style={{ opacity: 0.5 }} />
         }
+        
+        let _testResult = this.testResultInput ? 
+                this.testResultInput.value : (this.props.dependentValues.testResult ? 
+                        this.props.dependentValues.testResult : null)
+        
         if ( this.state.showForm ) {
             return (
                 <div style={{ zIndex: 99, position: "fixed" }}  >
@@ -225,7 +234,10 @@ export class ConfirmHotfixFormatter extends React.Component {
                                 </Checkbox>
                                 <FormGroup controlId="test-result" validationState="success">
                                     <ControlLabel>Please attach the test result or review document.</ControlLabel>
-                                    <FormControl inputRef={ele => this.testResultInput = ele} type="file" />
+                                    {
+                                        _testResult ? <div><span className="glyphicon glyphicon-open-file" />{" " + _testResult}</div> : ""
+                                    }
+                                    <FormControl onChange={this.refresh} inputRef={ele => this.testResultInput = ele} type="file" />
                                 </FormGroup>
                             </Modal.Body>
                             <Modal.Footer>

@@ -12,6 +12,10 @@
 	</parent>
 	<properties>
 		<tomcat.version>7.0.76</tomcat.version>
+		<deployment.server>ccbapts1</deployment.server>
+		<deployment.userName>truwrk1</deployment.userName>
+		<deployment.password>unix11</deployment.password>
+		<deployment.server.path>~/hfx/</deployment.server.path>
 	</properties>
 	<build>
 		<resources>
@@ -20,6 +24,62 @@
 			</resource>
 		</resources>
 		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-antrun-plugin</artifactId>
+				<version>1.7</version>
+				<executions>
+					<execution>
+						<phase>deploy</phase>
+						<goals>
+							<goal>run</goal>
+						</goals>
+						<configuration>
+							<target>
+								<echo>deploying to server: ${deployment.server}</echo>
+								<taskdef classname="org.apache.tools.ant.taskdefs.optional.ssh.Scp"
+									name="scp" />
+								<scp file="${project.build.directory}/${project.artifactId}-${project.version}.jar"
+									password="${deployment.password}" 
+									todir="${deployment.userName}@${deployment.server}:${deployment.server.path}/${project.artifactId}-${project.version}.jar"
+									trust="true" verbose="true" />
+									
+								<echo>Starting server ...</echo>
+								<sshexec command=". ~/.profile; 
+								running_pid=$(psu | grep hfx | grep -v grep | awk 'NR==1{print $2}');
+								test -z &quot;$running_pid&quot; || {
+									echo &quot;ERROR The application process is running, please manaully restart it&quot;; 
+									exit 1;
+								};
+								nohup java -Dspring.profiles.active=prod -jar ${deployment.server.path}/${project.artifactId}-${project.version}.jar > ${deployment.server.path}/${project.artifactId}-${project.version}.log 2>&amp;1 &amp;" 
+								host="${deployment.server}" 
+								password="${deployment.password}" 
+								trust="true" username="${deployment.userName}"></sshexec>
+							</target>
+						</configuration>
+					</execution>
+				</executions>
+				<dependencies>
+					<dependency>
+						<groupId>com.jcraft</groupId>
+						<artifactId>jsch</artifactId>
+						<version>0.1.25</version>
+					</dependency>
+					<dependency>
+						<groupId>org.apache.ant</groupId>
+						<artifactId>ant-jsch</artifactId>
+						<version>1.7.1</version>
+					</dependency>
+				</dependencies>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-deploy-plugin</artifactId>
+				<version>2.7</version>
+				<configuration>
+					<skip>true</skip>
+				</configuration>
+			</plugin>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>

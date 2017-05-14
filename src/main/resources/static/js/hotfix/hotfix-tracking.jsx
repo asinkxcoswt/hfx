@@ -12,6 +12,7 @@ import { Selectors } from "./hotfix-tracking-filter"
 import $ from "jquery"
 import LoadingOverlay from "react-loading-overlay";
 import { TextAreaEditor } from "./hotfix-tracking-editor"
+import $dateformat from "dateformat"
 
 class HotfixTrackingDocument extends React.Component {
 
@@ -44,18 +45,22 @@ class HotfixTrackingDocument extends React.Component {
         }
         this.COLUMNS.hfid = {
             key: 'hfid', name: `${pageProperties.version}`, resizable: true, editable: true, filterable: true, formatter: hfidFormatter,
+            width: 110,
             getRowMetaData: ( row ) => row
         }
         this.COLUMNS.hfid2 = {
             key: 'hfid2', name: `${pageProperties.version}0`, resizable: true, editable: true, filterable: true, formatter: hfidFormatter,
+            width: 110,
             getRowMetaData: ( row ) => row
         }
         this.COLUMNS.hfid3 = {
             key: 'hfid3', name: `${pageProperties.version + 1}`, resizable: true, editable: true, filterable: true, formatter: hfidFormatter,
+            width: 110,
             getRowMetaData: ( row ) => row
         }
         this.COLUMNS.hfid4 = {
             key: 'hfid4', name: `${pageProperties.version + 1}0`, resizable: true, editable: true, filterable: true, formatter: hfidFormatter,
+            width: 110,
             getRowMetaData: ( row ) => row
         }
         this.COLUMNS.creator = { key: 'creator', name: 'Created By', resizable: true, editable: true, filterable: true, formatter: TextFormatter }
@@ -422,8 +427,8 @@ class HotfixTrackingDocument extends React.Component {
                         this._setStateOnSubmitConfirmForm( HFID, sanityDesc, rollbackDesc, deploymentRemark, isRestartRequired, testResult )
                     })
                 }).fail(() => {
-                    alert("Failed to upload file.")
-                    this._setStateOnSubmitConfirmForm( HFID, sanityDesc, rollbackDesc, deploymentRemark, isRestartRequired, testResult )   
+                    alert( "Failed to upload file." )
+                    this._setStateOnSubmitConfirmForm( HFID, sanityDesc, rollbackDesc, deploymentRemark, isRestartRequired, testResult )
                 })
             } else {
                 this._setStateOnSubmitConfirmForm( HFID, sanityDesc, rollbackDesc, deploymentRemark, isRestartRequired, testResult )
@@ -481,17 +486,10 @@ class HotfixTrackingDocument extends React.Component {
     }
 
     setStateOnProductionDateUpdated = ( HFID, productionDateValue ) => {
-        if ( this.state.view === "RELS" ) {
-            this.setStateUpdateRows( this.state.relsSelectedHFIDs.map( hfid => ( {
-                hfid: hfid,
-                productionDate: productionDateValue
-            }) ) )
-        } else {
-            this.setStateUpdateRows( {
-                hfid: HFID,
-                productionDate: productionDateValue
-            })
-        }
+        this.setStateUpdateRows( {
+            hfid: HFID,
+            productionDate: productionDateValue
+        })
     }
 
     setStateOnManualDateUpdated = ( HFID, manualDateValue ) => {
@@ -828,12 +826,19 @@ class HotfixTrackingDocument extends React.Component {
     }
 
     openMailClientForConfirmRelease = () => {
-        let rowsWithProductionDate = this.getRelsRows().filter( row => row.productionDate )
-        if ( rowsWithProductionDate.length > 0 ) {
-            var productionDate = $dateformat( new Date( rowsWithProductionDate[0].productionDate ), "dd mmm yyyy" )
+
+        let prdDateList = this.getRelsRows()
+            .filter( row => row.productionDate )
+            .filter(( v, i, a ) => a.indexOf( v ) === i ) // filter distinct
+            .map( row => $dateformat( new Date( row.productionDate ), "dd mmm yyyy" ) )
+
+        if ( prdDateList.length > 0 ) {
+            var productionDate = prdDateList.join( ", " )
         } else {
             var productionDate = "[Production Date]"
         }
+
+        let attachements = this.getRelsRows().filter( row => row.testResult ).map( row => row.testResult )
 
         func$.getMailClient( {
             subject: `Confirm Hotfix Version ${this.trackingDoc.version} to deploy on production on ${productionDate}`,
@@ -841,7 +846,7 @@ class HotfixTrackingDocument extends React.Component {
             mailcc: [],
             senderName: "HFX",
             mailBody: this.getMailRelaseContent( productionDate ),
-            attachements: []
+            attachements: attachements
         }).done( html => {
             let win = window.open( "about:blank", "Release Hotfix", "height=500,width=800" );
             if ( !win ) {
@@ -855,7 +860,8 @@ class HotfixTrackingDocument extends React.Component {
     }
 
     getMailRelaseContent = ( productionDate ) => {
-        let relsRows = this.getRelsRows()
+        let relsRows = this.getRelsRows().filter(row => row.productionDate)
+
         let depnList = relsRows
             .map( row =>
                 !row.dependencies ? [] :
@@ -934,6 +940,7 @@ class HotfixTrackingDocument extends React.Component {
         let rs = `<table border="1" cellspacing="0" cellpadding="5">
         <thead>
         <tr>
+        <th>Production Date</th>
         <th>HFID</th>
         <th>Restart?</th>
         <th>Module</th>
@@ -950,6 +957,7 @@ class HotfixTrackingDocument extends React.Component {
         <tbody>`
         for ( let row of confirmedRows ) {
             rs += `<tr>
+            <td>${row.productionDate ? $dateformat( new Date( row.productionDate ), "dd mmm yyyy" ) : ""}</td>
             <td>${row.hfid}</td>
             <td>${row.isRestartRequired ? "YES" : "NO"}</td>
             <td>${row.module}</td>
@@ -965,6 +973,7 @@ class HotfixTrackingDocument extends React.Component {
         }
         for ( let row of togetherRows ) {
             rs += `<tr>
+            <td>${row.productionDate ? $dateformat( new Date( row.productionDate ), "dd mmm yyyy" ) : ""}</td>
             <td>${row.hfid}</td>
             <td>${row.needRestart}</td>
             <td>${row.module}</td>
@@ -985,6 +994,7 @@ class HotfixTrackingDocument extends React.Component {
     }
 
     render = () => {
+//        minHeight={$( ".react-grid-Row" ).first().height() * this.getRowsSize() + 200}
         return (
             <div>
                 <LoadingOverlay active={this.state.loading} text={"Loading..."} spinner background="rgba(57, 204, 204, 0.5)" >
@@ -994,7 +1004,7 @@ class HotfixTrackingDocument extends React.Component {
                         columns={this.getColumns()}
                         rowGetter={this.getRow}
                         rowsCount={this.getRowsSize()}
-                        minHeight={$( ".react-grid-Row" ).first().height() * this.getRowsSize() + 200}
+                        minHeight={600}
                         onGridRowsUpdated={this.setStateOnGridRowsUpdated}
                         toolbar={
                             <CustomToolbar

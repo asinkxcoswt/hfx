@@ -2,6 +2,7 @@ package hfx.controller.api;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URLConnection;
@@ -18,6 +19,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -42,7 +44,8 @@ public class MailAPIController {
 	
 	@RequestMapping(value="/send", method=RequestMethod.POST)
 	@ResponseBody
-	void sendMailInfo(@RequestParam("mailInfo") MailInfo mailInfo) throws IOException {
+	void sendMailInfo(@RequestBody MailInfo mailInfo) {
+		LOGGER.debug("mailInfo: " + mailInfo);
 		List<MailAttachment> attachments = new ArrayList<MailAttachment>();
 		try {
 			for (String attchID : mailInfo.getAttachements()) {
@@ -51,18 +54,27 @@ public class MailAPIController {
 				if (file.exists() && file.isFile()) {
 					InputStream content = new FileInputStream(file);
 					String contentType = URLConnection.guessContentTypeFromStream(content);
+					if (contentType == null) {
+						contentType = URLConnection.guessContentTypeFromName(file.getName());
+					}
+					if (contentType == null) {
+						contentType = "application/octet-stream";
+					}
+					LOGGER.debug("File: " + attchID);
+					LOGGER.debug("contentType: " + contentType);
 					attachments.add(new MailAttachment(file.getName(), contentType, content));
 				} else {
 					LOGGER.info("Attachement does not exist : " + file.getPath());
 				}
 			}
-			mailServices.sendMail(mailInfo.getMailto(), mailInfo.getMailcc(), mailInfo.getSenderName(), mailInfo.getMailBody(), attachments);	
+			mailServices.sendMail(mailInfo.getMailto(), mailInfo.getMailcc(), mailInfo.getSenderName(), mailInfo.getSubject(), mailInfo.getMailBody(), attachments);	
+		} catch (Exception e) {
+			throw new RuntimeException("Error while sending mail : " + e.getMessage(), e);
 		} finally {
 			for (MailAttachment attch : attachments) {
-				attch.getContent().close();
+				IOUtils.closeQuietly(attch.getContent());
 			}
 		}
-		
 	}
 	
 	@RequestMapping(value="/resource/{resourceID:.+}", method=RequestMethod.PUT)

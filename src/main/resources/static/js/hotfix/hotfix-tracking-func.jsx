@@ -70,10 +70,8 @@ function getHotfixInfoURL( HFID, version ) {
 }
 
 function putResource( resource ) {
-    console.log(resource)
     let data = new FormData()
     data.append("file", resource.file)
-    console.log(data.entries())
     return $.ajax( {
         url: `/apis-mail/resource/${resource.id}`,
         contentType: false,
@@ -81,6 +79,19 @@ function putResource( resource ) {
         dataType: "html",
         processData: false,
         data: data
+    })
+}
+
+function sendMail(mailInfo) {
+    return $.ajax( {
+        url: `/apis-mail/send`,
+        headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+        },
+        method: "POST",
+        dataType: "html",
+        data: JSON.stringify( mailInfo )
     })
 }
 
@@ -92,5 +103,6 @@ export default {
     saveTrackingDoc,
     getMailClient,
     getHotfixInfoURL,
-    putResource
+    putResource,
+    sendMail
 }

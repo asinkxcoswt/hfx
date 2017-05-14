@@ -1,14 +1,15 @@
 package hfx.model;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class MailInfo {
-	private String subject;
-	private List<String> mailto;
-	private List<String> mailcc;
-	private String senderName;
-	private String mailBody;
-	private List<String> attachements;
+	private String subject = "Nosubject";
+	private List<String> mailto = new ArrayList<String>();
+	private List<String> mailcc = new ArrayList<String>();
+	private String senderName = "Anonymous";
+	private String mailBody = "Nobody";
+	private List<String> attachements = new ArrayList<String>();
 	public String getSubject() {
 		return subject;
 	}
@@ -52,5 +53,10 @@ public class MailInfo {
 		return this;
 	}
 	
+	@Override
+	public String toString() {
+		return "MailInfo [subject=" + subject + ", mailto=" + mailto + ", mailcc=" + mailcc + ", senderName="
+				+ senderName + ", mailBody=" + mailBody + ", attachements=" + attachements + "]";
+	}
 	
 }

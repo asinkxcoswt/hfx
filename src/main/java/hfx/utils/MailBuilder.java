@@ -23,42 +23,27 @@ import javax.mail.internet.MimeMessage;
 import javax.mail.internet.MimeMultipart;
 import javax.mail.util.ByteArrayDataSource;
 
+import org.apache.commons.io.IOUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import hfx.model.MailAttachment;
 
 public class MailBuilder {
+	
+	private static final Logger LOGGER = LoggerFactory.getLogger(MailBuilder.class);
+	
 	private File tempFile = new File(System.getProperty("java.io.tmpdir"), "HFX_" + new SimpleDateFormat("yyyyMMddHHmmss").format(new Date()) + ".html");
-	private String sender;
+	private String sender = "Anonymous";
 	private StringBuilder receivers = new StringBuilder();
 	private StringBuilder ccs = new StringBuilder();
 	private StringBuilder content = new StringBuilder();
 	private String contentType = "text/html";
-	private String subject;
+	private String subject = "No Subject";
 	private List<MailAttachment> attachments = new ArrayList<MailAttachment>();
-	
-	private Consumer<Exception> errorHandler = new Consumer<Exception>() {
-		@Override
-		public void accept(Exception t) {
-			// do nothing
-		}
-	};
-	
-	private Runnable successHandler = new Runnable() {
-		@Override
-		public void run() {
-			// do nothing
-		}
-	};
 	
 	public MailBuilder withMailContentSavedToFile(File file) {
 		this.tempFile = file;
-		return this;
-	}
-	public MailBuilder onError(Consumer<Exception> handler) {
-		this.errorHandler = handler;
-		return this;
-	}
-	public MailBuilder onSuccess(Runnable handler) {
-		this.successHandler = handler;
 		return this;
 	}
 	public MailBuilder withAttachements(MailAttachment ... attachments) {
@@ -126,23 +111,19 @@ public class MailBuilder {
 	
 	private void generateTempFile() {
 		Session session = null;
-		FileOutputStream tempFile = null;
+		BufferedOutputStream tempFile = null;
+		LOGGER.debug("Generating mail temp file: " + this.getTempFilePath());
 	    try {
-	    	tempFile = new FileOutputStream(this.getTempFilePath());
-	        Message message;
-	        message = new MimeMessage(session);
+	        Message message =  new MimeMessage(session);
 	        message.setFrom(new InternetAddress(this.sender));
 	        message.setRecipients(Message.RecipientType.TO,
 	                InternetAddress.parse(this.receivers.toString()));
 	        message.addRecipients(Message.RecipientType.CC, InternetAddress.parse(this.ccs.toString()));
-
 	        message.setSubject(this.subject);
 	        Multipart multipart = new MimeMultipart();
-	        
 	        BodyPart content = new MimeBodyPart();
 	        content.setContent(this.content.toString(), this.contentType);
 	        multipart.addBodyPart(content);
-	        
 	        for (MailAttachment attch : this.attachments) {
 	        	DataSource ds = new ByteArrayDataSource(attch.getContent(), attch.getMimeType());
 		        BodyPart attach1 = new MimeBodyPart();
@@ -150,22 +131,15 @@ public class MailBuilder {
 		        attach1.setFileName(attch.getName());
 		        multipart.addBodyPart(attach1);
 	        }
-	        
 	        message.setContent(multipart);
-	        BufferedOutputStream out = new BufferedOutputStream(new FileOutputStream(this.getTempFilePath()));
-	        message.writeTo(out);
+	        tempFile = new BufferedOutputStream(new FileOutputStream(this.getTempFilePath()));
+	        message.writeTo(tempFile);
 	    } catch (MessagingException e) {
 	        throw new RuntimeException("Error while generate mail temp file: " + e.getMessage(), e);
 	    } catch (IOException e) {
 	    	throw new RuntimeException("Error while generate mail temp file: " + e.getMessage(), e);
 		} finally {
-			if (tempFile != null) {
-				try {
-					tempFile.close();
-				} catch (IOException e) {
-					throw new RuntimeException("Error while closing temp file: " + e.getMessage(), e);
-				}
-			}
+			IOUtils.closeQuietly(tempFile);
 		}
 	}
 	private String getTempFilePath() {
@@ -177,29 +151,18 @@ public class MailBuilder {
 	private String getMailCC() {
 		return ccs.toString();
 	}
-	private Runnable getSuccessHandler() {
-		return successHandler;
-	}
-	private Consumer<Exception> getErrorHandler() {
-		return errorHandler;
-	}
 	public void send() {
 		try {
 			Runtime runtime = Runtime.getRuntime();
 			generateTempFile();
 			String command = "cat " + getTempFilePath() + " | sendmail '" + getMailTo() + "' '" + getMailCC() + "'";
+			LOGGER.debug("Exec command : " + command);
 			int exitCode = runtime.exec(new String[] { "/bin/ksh", "-c", command }).waitFor();
-			if (exitCode == 0) {
-				getSuccessHandler().run();
-			} else {
+			if (exitCode != 0) {
 				throw new RuntimeException("sendmail command exit with non-zero code : " + exitCode);
 			}
 		} catch (Exception e) {
-			try {
-				getErrorHandler().accept(e);
-			} catch (Exception e1) {
-				throw new RuntimeException(e1.getMessage(), e1);
-			}
+			throw new RuntimeException("Error while exec command to send mail: " + e.getMessage(), e);
 		}
 	}
 }
