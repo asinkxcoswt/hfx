@@ -528,32 +528,28 @@ class HotfixTrackingDocument extends React.Component {
         }).fail( this.setStateOnAJAXError )
     }
 
-    setStateOnSyncHotfixInfo = ( HFID, rowIdx ) => {
+    setStateOnSyncHotfixInfo = ( HFID ) => {
         this.setState( { loading: true }, () => {
             func$.promiseGetHotfixInfo( HFID, pageProperties.version ).done( hotfixInfo => {
-                let rowsCopy = this.state.rows.slice()
-                rowsCopy[rowIdx] = $update( rowsCopy[rowIdx], {
-                    $merge: {
-                        hfid: HFID,
-                        creator: hotfixInfo.creator,
-                        module: hotfixInfo.module,
-                        version: hotfixInfo.version,
-                        defectSummary: hotfixInfo.defectSummary,
-                        creationDate: hotfixInfo.creationDate,
-                        instruction: hotfixInfo.instruction,
-                        files: hotfixInfo.files,
-                        rtNumber: hotfixInfo.rtNumber,
-                        location: hotfixInfo.location
-                    }
-                })
-                this.setState( {
-                    rows: rowsCopy, loading: false, helpMessage: (
-                        <span>Successfuly!! You can use control buttons
+                this.setStateUpdateRows( {
+                    hfid: HFID,
+                    creator: hotfixInfo.creator,
+                    module: hotfixInfo.module,
+                    version: hotfixInfo.version,
+                    defectSummary: hotfixInfo.defectSummary,
+                    creationDate: hotfixInfo.creationDate,
+                    instruction: hotfixInfo.instruction,
+                    files: hotfixInfo.files,
+                    rtNumber: hotfixInfo.rtNumber,
+                    location: hotfixInfo.location
+                },{
+                        loading: false, helpMessage: (
+                            <span>Successfuly!! You can use control buttons
                         to <span className=" glyphicon glyphicon-eye-open" /> file details,
                         send <span className=" glyphicon glyphicon-envelope" /> delivery to VM
                         or <span className=" glyphicon glyphicon-trash" /> a row.</span>
-                    )
-                })
+                        )
+                    })
 
             }).fail( this.setStateOnAJAXError )
         })
@@ -579,7 +575,11 @@ class HotfixTrackingDocument extends React.Component {
                 return
             }
 
-            this.setStateOnSyncHotfixInfo( hfid, fromRow )
+            let rowsCopy = this.state.rows.slice()
+            rowsCopy[fromRow] = $update( rowsCopy[fromRow], { $merge: { hfid: hfid } })
+            this.setState( { rows: rowsCopy }, () => {
+                this.setStateOnSyncHotfixInfo( hfid )
+            })
 
         } else {
             for ( let [key, val] of Object.entries( updated ) ) {
