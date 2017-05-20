@@ -229,6 +229,10 @@ export class CustomToolbar extends Toolbar {
         )
     }
 
+    toCSV = () => {
+        this.props.toCSV()
+    }
+
     render() {
 
 
@@ -252,6 +256,7 @@ export class CustomToolbar extends Toolbar {
                         <Button disabled={this.props.editMode ? false : true} className={this.state.showSyncSettings ? "btn-warning" : "btn-info"} onClick={this.onSyncSettings}>{this.state.showSyncSettings ? "Save Settings" : "Sync Settings"}</Button>
                         <Button disabled={false} className={this.state.showChart ? "btn-warning" : "btn-info"} onClick={this.onChart}>{this.state.showChart ? "Hide Chart" : "Show Chart"}</Button>
                         <Button disabled={false} className="btn-info" onClick={this.onSave}>Save Document</Button>
+                        <Button disabled={false} className="btn-info" onClick={this.toCSV}>Export To Excel</Button>
                     </ButtonGroup>
 
                 </Alert>

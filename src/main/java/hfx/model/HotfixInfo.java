@@ -54,6 +54,7 @@ public class HotfixInfo {
 	private Integer rtNumber;
 	private String files;
 	private String memo;
+	private String testResult;
 	
 	private boolean HFIDMailSentInd = false;
 	private boolean HFID2MailSentInd = false;
@@ -343,5 +344,13 @@ public class HotfixInfo {
 
 	public void setMemo(String memo) {
 		this.memo = memo;
+	}
+
+	public String getTestResult() {
+		return testResult;
+	}
+
+	public void setTestResult(String testResult) {
+		this.testResult = testResult;
 	}
 }

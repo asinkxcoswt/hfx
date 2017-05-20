@@ -170,6 +170,7 @@ class HotfixTrackingDocument extends React.Component {
             COLUMNS.creator,
             COLUMNS.module,
             COLUMNS.defectSummary,
+            COLUMNS.files,
             COLUMNS.memo,
             COLUMNS.creationDate
         ]
@@ -527,29 +528,33 @@ class HotfixTrackingDocument extends React.Component {
         }).fail( this.setStateOnAJAXError )
     }
 
-    setStateOnSyncHotfixInfo = ( HFID ) => {
+    setStateOnSyncHotfixInfo = ( HFID, rowIdx ) => {
         this.setState( { loading: true }, () => {
             func$.promiseGetHotfixInfo( HFID, pageProperties.version ).done( hotfixInfo => {
-                this.setStateUpdateRows( {
-                    hfid: HFID,
-                    creator: hotfixInfo.creator,
-                    module: hotfixInfo.module,
-                    version: hotfixInfo.version,
-                    defectSummary: hotfixInfo.defectSummary,
-                    creationDate: hotfixInfo.creationDate,
-                    instruction: hotfixInfo.instruction,
-                    files: hotfixInfo.files,
-                    rtNumber: hotfixInfo.rtNumber,
-                    location: hotfixInfo.location
-                }, {
-                        loading: false,
-                        helpMessage: (
-                            <span>Successfuly!! You can use control buttons
+                let rowsCopy = this.state.rows.slice()
+                rowsCopy[rowIdx] = $update( rowsCopy[rowIdx], {
+                    $merge: {
+                        hfid: HFID,
+                        creator: hotfixInfo.creator,
+                        module: hotfixInfo.module,
+                        version: hotfixInfo.version,
+                        defectSummary: hotfixInfo.defectSummary,
+                        creationDate: hotfixInfo.creationDate,
+                        instruction: hotfixInfo.instruction,
+                        files: hotfixInfo.files,
+                        rtNumber: hotfixInfo.rtNumber,
+                        location: hotfixInfo.location
+                    }
+                })
+                this.setState( {
+                    rows: rowsCopy, loading: false, helpMessage: (
+                        <span>Successfuly!! You can use control buttons
                         to <span className=" glyphicon glyphicon-eye-open" /> file details,
                         send <span className=" glyphicon glyphicon-envelope" /> delivery to VM
                         or <span className=" glyphicon glyphicon-trash" /> a row.</span>
-                        )
-                    })
+                    )
+                })
+
             }).fail( this.setStateOnAJAXError )
         })
     }
@@ -558,7 +563,13 @@ class HotfixTrackingDocument extends React.Component {
 
         if ( updated.hfid ) {
             if ( fromRow !== toRow ) {
+                alert( "You are trying to update multiple rows with the same primary HFID, please don't." )
                 this.setState( { loading: false, helpMessage: <span>You are trying to update multiple rows with the same primary HFID, <b>please don&#39;t</b></span> })
+                return
+            }
+            if ( Object.keys( this.state.filters ).length !== 0 ) {
+                alert( "Cannot add rows while on filters." )
+                this.setState( { loading: false, helpMessage: <span>Cannot add rows while on filters.</span> })
                 return
             }
             let hfid = updated.hfid
@@ -567,18 +578,50 @@ class HotfixTrackingDocument extends React.Component {
                 this.setState( { loading: false, helpMessage: <span>HFID {hfid} already exists!</span> })
                 return
             }
-            this.setStateOnSyncHotfixInfo( hfid )
+
+            this.setStateOnSyncHotfixInfo( hfid, fromRow )
 
         } else {
+            for ( let [key, val] of Object.entries( updated ) ) {
+                if ( key.match( /.*Date/ ) ) {
+                    if ( !val ) {
+                        continue
+                    }
+                    let t = parseInt( val )
+                    let d = new Date( t )
+                    if ( isNaN( d.getTime() ) ) {
+                        alert( "You enter an invalid date." )
+                        return
+                    } else {
+                        updated[key] = t
+                    }
+                } else if ( key.match( /hfid.*/ ) ) {
+                    if ( !val ) {
+                        continue
+                    }
+
+                    if ( isNaN( val ) ) {
+                        alert( "You enter an invalid number" )
+                        return
+                    }
+                }
+            }
+
             let updatedList = []
             for ( let i = fromRow; i <= toRow; i++ ) {
-                updatedList.push( $update( updated, { $merge: { hfid: this.state.rows[i].hfid } }) )
+                updatedList.push( $update( updated, { $merge: { hfid: this.getRow( i ).hfid } }) )
             }
             this.setStateUpdateRows( updatedList )
         }
     }
 
     setStateOnAddRow = () => {
+        if ( Object.keys( this.state.filters ).length !== 0 ) {
+            alert( "Cannot add rows while on filters." )
+            this.setState( { loading: false, helpMessage: <span>Cannot add rows while on filters.</span> })
+            return
+        }
+
         this.setState( {
             rows: $update( this.state.rows, {
                 $unshift: [{
@@ -829,8 +872,9 @@ class HotfixTrackingDocument extends React.Component {
 
         let prdDateList = this.getRelsRows()
             .filter( row => row.productionDate )
+            .map( row => row.productionDate )
             .filter(( v, i, a ) => a.indexOf( v ) === i ) // filter distinct
-            .map( row => $dateformat( new Date( row.productionDate ), "dd mmm yyyy" ) )
+            .map( productionDate => $dateformat( new Date( productionDate ), "dd mmm yyyy" ) )
 
         if ( prdDateList.length > 0 ) {
             var productionDate = prdDateList.join( ", " )
@@ -860,7 +904,7 @@ class HotfixTrackingDocument extends React.Component {
     }
 
     getMailRelaseContent = ( productionDate ) => {
-        let relsRows = this.getRelsRows().filter(row => row.productionDate)
+        let relsRows = this.getRelsRows().filter( row => row.productionDate )
 
         let depnList = relsRows
             .map( row =>
@@ -993,11 +1037,73 @@ class HotfixTrackingDocument extends React.Component {
         return rs
     }
 
+    syncInfoAll = () => {
+        this.state.rows.forEach( row => {
+            this.setStateOnSyncHotfixInfo( row.hfid );
+        })
+    }
+
+    toCSV = () => {
+        let header = [
+            "hfid",
+            "hfid2",
+            "hfid3",
+            "hfid4",
+            "version",
+            "creator",
+            "defectSummary",
+            "module",
+            "creationDate",
+            "confirmDate",
+            "manualDate",
+            "productionDate",
+            "cancelDate",
+            "sanityDesc",
+            "rollbackDesc",
+            "deploymentRemark",
+            "isRestartRequired",
+            "location",
+            "instruction",
+            "canAutoDeploy",
+            "rtNumber",
+            "files",
+            "memo",
+            "testResult"
+        ]
+
+        let content = "data:text/csv;charset=utf-8," + header.map( field => {
+            switch ( field ) {
+                case "hfid": return `${pageProperties.version}`
+                case "hfid2": return `${pageProperties.version}0`
+                case "hfid3": return `${pageProperties.version + 1}`
+                case "hfid4": return `${pageProperties.version + 1}0`
+                default: return field
+            }
+        }).join( "," ) + "\r\n" + this.state.rows.map( row => {
+            return header.map( field => {
+                if ( field.match( /.*Date/ ) ) {
+                    return row[field] ? `"${$dateformat( new Date( row[field] ), "dd mmm yyyy" )}"` : null
+                } else if ( field.match( /hfid.*/ ) ) {
+                    return row[field] ? row[field] : null
+                } else {
+                    return row[field] ? `"${row[field]}"` : null
+                }
+            }).join( "," )
+        }).join( "\r\n" )
+        content = encodeURI( content )
+        let link = document.createElement( "a" );
+        link.setAttribute( "href", content );
+        link.setAttribute( "download", pageProperties.documentID + ".csv" );
+        document.body.appendChild( link ); // Required for FF
+        link.click();
+    }
+
     render = () => {
-//        minHeight={$( ".react-grid-Row" ).first().height() * this.getRowsSize() + 200}
+        //        minHeight={$( ".react-grid-Row" ).first().height() * this.getRowsSize() + 200}
         return (
             <div>
                 <LoadingOverlay active={this.state.loading} text={"Loading..."} spinner background="rgba(57, 204, 204, 0.5)" >
+                    <input type="hidden" id="syncInfoAllButton" onClick={this.syncInfoAll} />
                     <ReactDataGrid
                         ref={ele => this.grid = ele}
                         enableCellSelect={true}
@@ -1027,7 +1133,8 @@ class HotfixTrackingDocument extends React.Component {
                                 enableFilter={true}
                                 enableSort={this.state.view === "EDIT"}
                                 trackingDoc={this.trackingDoc}
-                                helpMessage={() => this.state.helpMessage} />
+                                helpMessage={() => this.state.helpMessage}
+                                toCSV={this.toCSV} />
                         }
                         onAddFilter={this.setStateOnFilterChange}
                         onClearFilters={this.setStateOnClearFilters}
@@ -1041,7 +1148,7 @@ class HotfixTrackingDocument extends React.Component {
 
 // enable React Devtools
 if ( typeof window !== 'undefined' ) {
-    window.React = React;
+    window.React = React
 }
 
 ReactDOM.render(

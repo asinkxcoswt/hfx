@@ -89,6 +89,7 @@ export class DateFormatter extends React.Component {
     }
 
     render = () => {
+
         if ( !this.props.isEnabled( this.props.dependentValues ) ) {
             return <span className="glyphicon glyphicon-ban-circle" style={{ opacity: 0.5 }} />
         }
@@ -106,7 +107,8 @@ export class DateFormatter extends React.Component {
                         keepOpenOnDateSelect={false}
                         isOutsideRange={() => false}
                         showClearDate={true}
-                        displayFormat={() => "DD MMM YYYY"} />
+                        displayFormat={() => "DD MMM YYYY"}
+                        withPortal={true} />
                 </div>
             )
         } else {
@@ -195,18 +197,17 @@ export class ConfirmHotfixFormatter extends React.Component {
     }
 
     refresh = () => {
-        this.setState({})
+        this.setState( {})
     }
 
     render() {
         if ( !this.props.isEnabled( this.props.dependentValues ) ) {
             return <span className="glyphicon glyphicon-ban-circle" style={{ opacity: 0.5 }} />
         }
-        
-        let _testResult = this.testResultInput ? 
-                this.testResultInput.value : (this.props.dependentValues.testResult ? 
-                        this.props.dependentValues.testResult : null)
-        
+        let _testResult = this.testResultInput && this.testResultInput.files.length > 0 ?
+            this.testResultInput.files[0].name : ( this.props.dependentValues.testResult ?
+                this.props.dependentValues.testResult : null )
+
         if ( this.state.showForm ) {
             return (
                 <div style={{ zIndex: 99, position: "fixed" }}  >
@@ -235,7 +236,13 @@ export class ConfirmHotfixFormatter extends React.Component {
                                 <FormGroup controlId="test-result" validationState="success">
                                     <ControlLabel>Please attach the test result or review document.</ControlLabel>
                                     {
-                                        _testResult ? <div><span className="glyphicon glyphicon-open-file" />{" " + _testResult}</div> : ""
+                                        _testResult ? (
+                                            <div>
+                                                <a className="btn btn-default" target="_blank" href={`/apis-mail/resource/${_testResult}`}>
+                                                    <span style={{ fontSize: 30 }} className="glyphicon glyphicon-save-file" />
+                                                    {" " + _testResult}
+                                                </a>
+                                            </div> ) : ""
                                     }
                                     <FormControl onChange={this.refresh} inputRef={ele => this.testResultInput = ele} type="file" />
                                 </FormGroup>

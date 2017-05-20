@@ -24,9 +24,20 @@ class MailClient extends React.Component {
                     toolbar: 'undo redo | bold italic | alignleft aligncenter alignright | code | refresh cancel send',
                     height: "500px"
                 }}
-                onChange={this.setStateOnValueChange}
+                onChange={this.onContentChange}
                 />
         )
+    }
+
+    onContentChange = (e) => {
+        console.log(e.target.getContent())
+        this.setState( {
+            mailInfo: $update( this.state.mailInfo, {
+                $merge: {
+                    mailBody: e.target.getContent()
+                }
+            })
+        })
     }
 
     onAttachementDiscard = ( i ) => {
