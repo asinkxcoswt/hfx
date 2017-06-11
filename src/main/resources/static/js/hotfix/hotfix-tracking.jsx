@@ -1062,8 +1062,6 @@ class HotfixTrackingDocument extends React.Component {
             "rollbackDesc",
             "deploymentRemark",
             "isRestartRequired",
-            "location",
-            "instruction",
             "canAutoDeploy",
             "rtNumber",
             "files",
@@ -1085,6 +1083,8 @@ class HotfixTrackingDocument extends React.Component {
                     return row[field] ? `"${$dateformat( new Date( row[field] ), "dd mmm yyyy" )}"` : null
                 } else if ( field.match( /hfid.*/ ) ) {
                     return row[field] ? row[field] : null
+                } else if (row[field] && typeof(row[field]) === "string") {
+                    return `"${row[field].replace(/[\r\n]*/g, "")}"`
                 } else {
                     return row[field] ? `"${row[field]}"` : null
                 }
